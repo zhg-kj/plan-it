@@ -44,9 +44,9 @@ const typeDefs = gql`
     updateSchedule(id: ID!, title: String!) : Schedule
     deleteSchedule(id: ID!): Boolean!
 
-    createEvent(start: String!, end: String!, scheduleId: ID!) : Event!
-    updateEvent(id: ID!, start: String!, end: String!) : Event!
-    deleteEvent(id: ID!) : Boolean!
+    createPlan(start: String!, end: String!, scheduleId: ID!) : Plan!
+    updatePlan(id: ID!, start: String!, end: String!) : Plan!
+    deletePlan(id: ID!) : Boolean!
   }
 
   input SignUpInput {
@@ -81,10 +81,10 @@ const typeDefs = gql`
     title: String!
     isPrimary: String!
     lastUpdated: String!
-    events: [Event!]!
+    plans: [Plan!]!
   }
 
-  type Event {
+  type Plan {
     id: ID!
     start: String!
     end: String!
@@ -246,41 +246,41 @@ const resolvers = {
       return true;
     },
 
-    // CRUD Event
-    createEvent: async (_, { start, end, scheduleId }, { db, user }) => {
+    // CRUD Plan
+    createPlan: async (_, { start, end, scheduleId }, { db, user }) => {
       if (!user) {
         throw new Error('Authentication Error');
       }
 
-      const newEvent = {
+      const newPlan = {
         start: start,
         end: end,
         scheduleId: ObjectId(scheduleId)
       }
 
-      //TODO make schedule of event change its last updated
-      const result = await db.collection('Events').insertOne(newEvent)
-      const event = await db.collection('Events').findOne({ _id: result.insertedId }); 
+      //TODO make schedule of plan change its last updated
+      const result = await db.collection('Plans').insertOne(newPlan)
+      const plan = await db.collection('Plans').findOne({ _id: result.insertedId }); 
 
-      return event
+      return plan
     },
-    updateEvent: async(_, { id, start, end }, { db, user }) => {
+    updatePlan: async(_, { id, start, end }, { db, user }) => {
       if (!user) {
         throw new Error('Authentication Error');
       }
 
-      await db.collection('Events').updateOne({ _id: ObjectId(id) }, { $set: { start: start, end: end } })
-      const updatedEvent = await db.collection('Events').findOne({ _id: ObjectId(id) });
+      await db.collection('Plans').updateOne({ _id: ObjectId(id) }, { $set: { start: start, end: end } })
+      const updatedPlan = await db.collection('Plans').findOne({ _id: ObjectId(id) });
 
-      return updatedEvent
+      return updatedPlan
     },
-    deleteEvent: async(_, { id }, { db, user }) => {
+    deletePlan: async(_, { id }, { db, user }) => {
       if (!user) {
         throw new Error('Authentication Error');
       }
       
-      // TODO only owner of this event should be able to delete
-      await db.collection('Events').deleteOne({ _id: ObjectId(id) });
+      // TODO only owner of this plan should be able to delete
+      await db.collection('Plans').deleteOne({ _id: ObjectId(id) });
 
       return true;
     },
@@ -290,11 +290,11 @@ const resolvers = {
   },
   Schedule: {
     id: ( { _id, id } ) => _id || id,
-    events: async ({ _id }, _, { db }) => (
-      await db.collection('Events').find({ scheduleId: ObjectId(_id)}).toArray()
+    plans: async ({ _id }, _, { db }) => (
+      await db.collection('Plans').find({ scheduleId: ObjectId(_id)}).toArray()
     ), 
   },
-  Event: {
+  Plan: {
     id: ( { _id, id } ) => _id || id,
     schedule: async ({ scheduleId }, _, { db }) => (
       await db.collection('Schedules').findOne({ _id: ObjectId(scheduleId) })
