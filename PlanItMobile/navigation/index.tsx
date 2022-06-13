@@ -12,10 +12,15 @@ import { ColorSchemeName, Pressable } from 'react-native';
 
 import Colors from '../constants/Colors';
 import useColorScheme from '../hooks/useColorScheme';
-import CreateEventScreen from '../screens/CreateEventScreen';
+
+import CreatePlanScreen from '../screens/CreatePlanScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
 import TabOneScreen from '../screens/TabOneScreen';
 import TabTwoScreen from '../screens/TabTwoScreen';
+import SignInScreen from '../screens/SignInScreen';
+import SignUpScreen from '../screens/SignUpScreen';
+import SplashScreen from '../screens/SplashScreen';
+
 import { RootStackParamList, RootTabParamList, RootTabScreenProps } from '../types';
 import LinkingConfiguration from './LinkingConfiguration';
 
@@ -38,10 +43,13 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function RootNavigator() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Root" component={BottomTabNavigator} options={{ headerShown: false }} />
+      <Stack.Screen name="SplashScreen" component={SplashScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="SignInScreen" component={SignInScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Home" component={BottomTabNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="NotFound" component={NotFoundScreen} options={{ title: 'Oops!' }} />
       <Stack.Group screenOptions={{ presentation: 'modal' }}>
-        <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
+        <Stack.Screen name="CreatePlan" component={CreatePlanScreen} options={{ title: 'Create Plan' }} />
       </Stack.Group>
     </Stack.Navigator>
   );
@@ -70,7 +78,7 @@ function BottomTabNavigator() {
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
           headerRight: () => (
             <Pressable
-              onPress={() => navigation.navigate('CreateEvent')}
+              onPress={() => navigation.navigate('CreatePlan')}
               style={({ pressed }) => ({
                 opacity: pressed ? 0.5 : 1,
               })}>
