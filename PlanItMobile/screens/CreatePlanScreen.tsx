@@ -1,14 +1,50 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet } from 'react-native';
+import { Alert, Platform, StyleSheet } from 'react-native';
 import { Text, View } from '../components/Themed';
 
 import { Calendar, Input, Button } from '@ui-kitten/components';
+import { gql, useMutation } from '@apollo/client';
 
-export default function CreateEventScreen() {
+const CREATE_PLAN_MUTATION = gql`
+mutation CreatePlan($start: String!, $end: String!, $scheduleId: ID!, $title: String!, $description: String) {
+  createPlan(start: $start, end: $end, scheduleId: $scheduleId, title: $title, description: $description) {
+    title
+    description
+    id
+    start
+    end
+  }
+}`;
+
+export default function CreatePlanScreen({ route, navigation }: { route: any, navigation: any }) {
   const [date, setDate] = useState(new Date());
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [planDates, setplanDates] = useState(['']);
+
+  const [createPlan, plan] = useMutation(CREATE_PLAN_MUTATION);
+
+  if (plan.error) {
+    Alert.alert('Error creating plan.', plan.error.message);
+  }
+
+  if (plan.data) {
+    console.log(plan.data)
+    navigation.goBack()
+  }
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      // This check is to prevent error on component mount. The refetch function is defined only after the query is run once
+      // It also ensures that refetch runs only when you go back and not on component mount
+      setplanDates(route.params.planDates)
+    });
+    
+    return unsubscribe;
+  }, [navigation]);
+
+  const filter = (date: Date) => !planDates.includes(date.toISOString())
 
   return (
     <View style={styles.container}>
@@ -29,12 +65,11 @@ export default function CreateEventScreen() {
       <Calendar
         date={date}
         onSelect={nextDate => setDate(nextDate)}
+        filter={filter}
       />
-      <Button onPress={() => {}}>
+      <Button onPress={() => {createPlan({variables: { start: date, end: date, scheduleId: route.params.schedule.id, title: title, description: description }})}}>
         Create Plan
       </Button>
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
-      <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
     </View>
   );
 }

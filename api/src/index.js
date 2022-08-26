@@ -31,6 +31,7 @@ const typeDefs = gql`
     myFriends: [User!]!
     mySchedules: [Schedule!]!
     getSchedule(id: ID!): Schedule
+    getPlans(id: ID!): [Plan!]!
   }
 
   type Mutation {
@@ -43,8 +44,9 @@ const typeDefs = gql`
     createSchedule(title: String!, primary: String!) : Schedule!
     updateSchedule(id: ID!, title: String!) : Schedule
     deleteSchedule(id: ID!): Boolean!
+    setPrimary(id: ID!) : Schedule
 
-    createPlan(start: String!, end: String!, scheduleId: ID!) : Plan!
+    createPlan(start: String!, end: String!, scheduleId: ID!, title: String!, description: String) : Plan!
     updatePlan(id: ID!, start: String!, end: String!) : Plan!
     deletePlan(id: ID!) : Boolean!
   }
@@ -81,10 +83,11 @@ const typeDefs = gql`
     title: String!
     isPrimary: String!
     lastUpdated: String!
-    plans: [Plan!]!
   }
 
   type Plan {
+    title: String!
+    description: String
     id: ID!
     start: String!
     end: String!
@@ -119,7 +122,15 @@ const resolvers = {
       }
       
       return await db.collection('Schedules').findOne({ _id: ObjectId(id) });
-    }
+    },
+    getPlans: async (_, { id }, { db, user }) => {
+      if (!user) {
+        throw new Error('Invalid Credentials!');
+      }
+
+      const plans = await db.collection('Plans').find({ scheduleId: ObjectId(id)}).toArray()
+      return plans
+    },
   },
   Mutation: {
     // C User / Auth
@@ -222,6 +233,10 @@ const resolvers = {
       const result = await db.collection('Schedules').insertOne(newSchedule);
       const schedule = await db.collection('Schedules').findOne({ _id: result.insertedId });
 
+      if (primary) {
+        await db.collection('Schedules').updateOne({ _id: ObjectId(user._id), isPrimary: true }, { $set: { isPrimary: false } });
+      }
+
       return schedule
     },
     updateSchedule: async(_, { id, title }, { db, user }) => {
@@ -245,9 +260,21 @@ const resolvers = {
 
       return true;
     },
+    setPrimary: async(_, { id }, { db, user }) => {
+      if (!user) {
+        throw new Error('Authentication Error');
+      }
+
+      await db.collection('Schedules').updateOne({ _id: ObjectId(id) }, { $set: { isPrimary: true } })
+      await db.collection('Schedules').updateOne({ _id: ObjectId(user._id), isPrimary: true }, { $set: { isPrimary: false } });
+      const updatedSchedule = await db.collection('Schedules').findOne({ _id: ObjectId(id) });
+
+      return updatedSchedule
+    },
+
 
     // CRUD Plan
-    createPlan: async (_, { start, end, scheduleId }, { db, user }) => {
+    createPlan: async (_, { start, end, scheduleId, title, description }, { db, user }) => {
       if (!user) {
         throw new Error('Authentication Error');
       }
@@ -255,7 +282,9 @@ const resolvers = {
       const newPlan = {
         start: start,
         end: end,
-        scheduleId: ObjectId(scheduleId)
+        scheduleId: ObjectId(scheduleId),
+        title: title,
+        description: description
       }
 
       //TODO make schedule of plan change its last updated
@@ -289,10 +318,7 @@ const resolvers = {
     id: ( { _id, id } ) => _id || id
   },
   Schedule: {
-    id: ( { _id, id } ) => _id || id,
-    plans: async ({ _id }, _, { db }) => (
-      await db.collection('Plans').find({ scheduleId: ObjectId(_id)}).toArray()
-    ), 
+    id: ( { _id, id } ) => _id || id
   },
   Plan: {
     id: ( { _id, id } ) => _id || id,

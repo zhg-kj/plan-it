@@ -15,14 +15,18 @@ import useColorScheme from '../hooks/useColorScheme';
 
 import CreatePlanScreen from '../screens/CreatePlanScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
-import TabOneScreen from '../screens/TabOneScreen';
-import TabTwoScreen from '../screens/TabTwoScreen';
+import MainScreen from '../screens/MainScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import SplashScreen from '../screens/SplashScreen';
+import ScheduleScreen from '../screens/ScheduleScreen';
 
 import { RootStackParamList, RootTabParamList, RootTabScreenProps } from '../types';
 import LinkingConfiguration from './LinkingConfiguration';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Updates from 'expo-updates';
+import { useNavigation } from '@react-navigation/native';
 
 export default function Navigation({ colorScheme }: { colorScheme: ColorSchemeName }) {
   return (
@@ -47,10 +51,9 @@ function RootNavigator() {
       <Stack.Screen name="SignInScreen" component={SignInScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Home" component={BottomTabNavigator} options={{ headerShown: false }} />
+      <Stack.Screen name="ScheduleScreen" component={ScheduleScreen} options={{ title: '', headerBackTitleVisible: false }} />
       <Stack.Screen name="NotFound" component={NotFoundScreen} options={{ title: 'Oops!' }} />
-      <Stack.Group screenOptions={{ presentation: 'modal' }}>
-        <Stack.Screen name="CreatePlan" component={CreatePlanScreen} options={{ title: 'Create Plan' }} />
-      </Stack.Group>
+      <Stack.Screen name="CreatePlan" component={CreatePlanScreen} options={{ title: 'Create Plan', headerBackTitleVisible: false }} />
     </Stack.Navigator>
   );
 }
@@ -66,38 +69,38 @@ function BottomTabNavigator() {
 
   return (
     <BottomTab.Navigator
-      initialRouteName="TabOne"
+      initialRouteName="Main"
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
       }}>
       <BottomTab.Screen
-        name="TabOne"
-        component={TabOneScreen}
-        options={({ navigation }: RootTabScreenProps<'TabOne'>) => ({
-          title: 'Tab One',
+        name="Main"
+        component={MainScreen}
+        options={{
+          title: 'Main Screen',
+          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+        }}
+      />
+      <BottomTab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          title: 'Profile',
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
           headerRight: () => (
             <Pressable
-              onPress={() => navigation.navigate('CreatePlan')}
+              onPress={async () => await AsyncStorage.removeItem('token').then(() => Updates.reloadAsync())}
               style={({ pressed }) => ({
                 opacity: pressed ? 0.5 : 1,
               })}>
               <FontAwesome
-                name="info-circle"
+                name="sign-out"
                 size={25}
                 color={Colors[colorScheme].text}
                 style={{ marginRight: 15 }}
               />
             </Pressable>
           ),
-        })}
-      />
-      <BottomTab.Screen
-        name="TabTwo"
-        component={TabTwoScreen}
-        options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
         }}
       />
     </BottomTab.Navigator>

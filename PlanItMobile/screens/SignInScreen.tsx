@@ -30,8 +30,8 @@ const SignInScreen = () => {
   }
 
   if (data) {
+    console.log(data)
     AsyncStorage.setItem('token', data.signIn.token)
-    //AsyncStorage.removeItem('token') to logout!!!!!!!!!!
     .then(() => navigation.navigate('Home'))
   }
 
