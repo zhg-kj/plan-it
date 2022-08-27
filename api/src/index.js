@@ -32,6 +32,7 @@ const typeDefs = gql`
     mySchedules: [Schedule!]!
     getSchedule(id: ID!): Schedule
     getPlans(id: ID!): [Plan!]!
+    getUsers: [User!]!
   }
 
   type Mutation {
@@ -96,8 +97,6 @@ const typeDefs = gql`
   }
 `;
 
-// Resolvers define the technique for fetching the types defined in the
-// schema. This resolver retrieves books from the "books" array above.
 const resolvers = {
   Query: {
     myFriends: async (_, __, { db, user }) => {
@@ -130,6 +129,14 @@ const resolvers = {
 
       const plans = await db.collection('Plans').find({ scheduleId: ObjectId(id)}).toArray()
       return plans
+    },
+    getUsers: async (_, __, { db, user }) => {
+      if (!user) {
+        throw new Error('Invalid Credentials!');
+      }
+
+      const users = await db.collection('Users').find({ userId: { $not: {$eq: ObjectId(user._id)}}}).toArray()
+      return users
     },
   },
   Mutation: {

@@ -3,8 +3,9 @@ import { StatusBar } from 'expo-status-bar';
 import { Alert, Platform, StyleSheet } from 'react-native';
 import { Text, View } from '../components/Themed';
 
-import { Calendar, Input, Button } from '@ui-kitten/components';
+import { Calendar, Input, Button, Autocomplete, AutocompleteItem, TextProps } from '@ui-kitten/components';
 import { gql, useMutation } from '@apollo/client';
+import { Friend } from '../types';
 
 const CREATE_PLAN_MUTATION = gql`
 mutation CreatePlan($start: String!, $end: String!, $scheduleId: ID!, $title: String!, $description: String) {
@@ -17,7 +18,11 @@ mutation CreatePlan($start: String!, $end: String!, $scheduleId: ID!, $title: St
   }
 }`;
 
+const filterFriends = (item: Friend, query: string) => item.name.toLowerCase().includes(query.toLowerCase());
+
 export default function CreatePlanScreen({ route, navigation }: { route: any, navigation: any }) {
+  const [value, setValue] = useState('');
+  const [friends, setFriends] = useState(route.params.friends)
   const [date, setDate] = useState(new Date());
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -40,16 +45,39 @@ export default function CreatePlanScreen({ route, navigation }: { route: any, na
       // It also ensures that refetch runs only when you go back and not on component mount
       setplanDates(route.params.planDates)
     });
-    
+
     return unsubscribe;
   }, [navigation]);
 
-  const filter = (date: Date) => !planDates.includes(date.toISOString())
+  const filterDates = (date: Date) => !planDates.includes(date.toISOString())
+
+  const onSelect = (index: string | number) => {
+    setValue(route.params.friends[index].name);
+  };
+
+  const onChangeText = (query: string) => {
+    setValue(query);
+    setFriends(route.params.friends.filter((item: Friend) => filterFriends(item, query)));
+  };
+
+  const renderOption = (item: Friend, index: React.Key | null | undefined) => (
+    <AutocompleteItem
+      key={index}
+      title={item.name}
+    />
+  );
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create a new plan!</Text>
       <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
+      <Autocomplete
+        placeholder='Add a friend!'
+        value={value}
+        onSelect={onSelect}
+        onChangeText={onChangeText}>
+        {friends.map(renderOption)}
+      </Autocomplete>
       <Input
           placeholder='Give your plan a name!'
           value={title}
@@ -65,7 +93,7 @@ export default function CreatePlanScreen({ route, navigation }: { route: any, na
       <Calendar
         date={date}
         onSelect={nextDate => setDate(nextDate)}
-        filter={filter}
+        filter={filterDates}
       />
       <Button onPress={() => {createPlan({variables: { start: date, end: date, scheduleId: route.params.schedule.id, title: title, description: description }})}}>
         Create Plan

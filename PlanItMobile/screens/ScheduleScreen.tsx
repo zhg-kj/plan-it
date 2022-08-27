@@ -99,7 +99,7 @@ export default function ScheduleScreen({ route, navigation }: { route: any, navi
         }}
         filter={filter}
       />
-      <Button onPress={() => {navigation.navigate("CreatePlan", { schedule: schedule, planDates: planDates })}}>
+      <Button onPress={() => {navigation.navigate("CreatePlan", { schedule: schedule, planDates: planDates, friends: route.params.friends })}}>
         Add a Plan!
       </Button>
       <View style={styles.container}>

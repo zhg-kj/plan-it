@@ -6,7 +6,6 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { List } from '@ui-kitten/components';
 
 declare global {
   namespace ReactNavigation {
@@ -22,7 +21,7 @@ export type RootStackParamList = {
   SignInScreen: undefined;
   SignUpScreen: undefined;
   SplashScreen: undefined;
-  ScheduleScreen: { schedule: Schedule };
+  ScheduleScreen: { schedule: Schedule, friends: Friend[] };
 };
 
 export type RootStackScreenProps<Screen extends keyof RootStackParamList> = NativeStackScreenProps<
@@ -56,4 +55,5 @@ export type Plan = {
 
 export type Friend = {
   name: string
+  id: string
 }
