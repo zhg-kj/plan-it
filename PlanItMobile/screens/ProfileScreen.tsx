@@ -4,6 +4,7 @@ import { Text, View } from '../components/Themed';
 import { Key, SetStateAction, useEffect, useState } from 'react';
 import { useQuery, gql, useMutation } from '@apollo/client';
 import { Divider, List, ListItem, Autocomplete, AutocompleteItem } from '@ui-kitten/components';
+import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Friend, Schedule } from '../types';
 
@@ -18,6 +19,7 @@ const MY_USERS = gql `query GetUsers {
 const MY_FRIENDS = gql `query MyFriends {
   myFriends {
     name
+    id
   }
 }`
 
@@ -29,7 +31,7 @@ const MY_SCHEDULES = gql `query MySchedules {
   }
 }`
 
-const ADD_FRIEND_MUTATION = gql `mutation Mutation($friendId: ID!) {
+const ADD_FRIEND_MUTATION = gql `mutation AddFriend($friendId: ID!) {
   addFriend(friendId: $friendId) {
     id
     name
@@ -47,7 +49,7 @@ const filter = (item: { name: string; }, query: string) => item.name.toLowerCase
 
 export default function ProfileScreen() {
   const [value, setValue] = useState('');
-  const [users, setUsers] = useState([])
+  const [users, setUsers] = useState<Friend[]>([])
   const [friends, setFriends] = useState<Friend[]>([])
   const [schedules, setSchedules] = useState([])
 
@@ -59,27 +61,36 @@ export default function ProfileScreen() {
   const mySchedules = useQuery(MY_SCHEDULES)
 
   // Mutations
-  const [addFriend, friend] = useMutation(ADD_FRIEND_MUTATION);
+  const [addFriend, afriend] = useMutation(ADD_FRIEND_MUTATION, {
+    refetchQueries: [
+      {query: MY_FRIENDS},
+      'MyFriends'
+    ],
+  });
 
-  if (friend.error) {
-    Alert.alert('Error adding friend.', friend.error.message);
+  if (afriend.error) {
+    Alert.alert('Error adding friend.', afriend.error.message);
   }
 
-  if (friend.data) {
-    console.log(friend.data)
+  if (afriend.data) {
+    console.log(afriend.data)
   }
 
-  const [deleteFriend, dfriend] = useMutation(DELETE_FRIEND_MUTATION);
+  const [deleteFriend, dfriend] = useMutation(DELETE_FRIEND_MUTATION, {
+    refetchQueries: [
+      {query: MY_FRIENDS}, 
+      'MyFriends'
+    ],
+  });
 
   if (dfriend.error) {
-    Alert.alert('Error adding friend.', dfriend.error.message);
+    Alert.alert('Error deleting friend.', dfriend.error.message);
   }
 
   if (dfriend.data) {
     console.log(dfriend.data)
   }
   
-
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       // This check is to prevent error on component mount. The refetch function is defined only after the query is run once
@@ -112,6 +123,7 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (myFriends.data) {
+      console.log(myFriends.data)
       setFriends(myFriends.data.myFriends);
     }
   }, [myFriends.data])
@@ -139,17 +151,29 @@ export default function ProfileScreen() {
     />
   );
 
+  const delFriend = (friend: Friend) => (
+    <Pressable
+      onPress={() => deleteFriend({variables: {friendId: friend.id}})}
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.5 : 1,
+      })}>
+      <FontAwesome
+        name="close"
+        size={25}
+      />
+    </Pressable>
+  )
+
   const renderFriends = ({ item }: {item: Friend}) => (
     <ListItem
       title={item.name}
+      accessoryRight = {delFriend(item)}
     />
   );
 
   // Autocomplete
-  const onSelect = (index: string | number) => {
-    addFriend({variables: {friendId: myUsers.data.getUsers[index].id}});
-    myFriends.refetch();
-    console.log(myFriends.refetch)
+  const onSelect = (index: number) => {
+    addFriend({variables: {friendId: users[index].id}});
   };
 
   const onChangeText = (query: string) => {
