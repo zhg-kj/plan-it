@@ -44,9 +44,14 @@ export default function Navigation({ colorScheme }: { colorScheme: ColorSchemeNa
  */
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+const isAuthenticated = async () => {
+  const token = await AsyncStorage.getItem('token');
+  return !!token;
+}
+
 function RootNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator> 
       <Stack.Screen name="SplashScreen" component={SplashScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SignInScreen" component={SignInScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
@@ -66,6 +71,7 @@ const BottomTab = createBottomTabNavigator<RootTabParamList>();
 
 function BottomTabNavigator() {
   const colorScheme = useColorScheme();
+  const navigation = useNavigation();
 
   return (
     <BottomTab.Navigator
@@ -89,7 +95,7 @@ function BottomTabNavigator() {
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
           headerRight: () => (
             <Pressable
-              onPress={async () => await AsyncStorage.removeItem('token').then(() => Updates.reloadAsync())}
+              onPress={async () => await AsyncStorage.clear().then(() => navigation.navigate('SignInScreen'))}
               style={({ pressed }) => ({
                 opacity: pressed ? 0.5 : 1,
               })}>

@@ -41,7 +41,7 @@ export type RootTabScreenProps<Screen extends keyof RootTabParamList> = Composit
 
 export type Schedule = {
   title: string,
-  isPrimary: string,
+  isActive: number,
   id: string
 }
 

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, Platform, StyleSheet } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Keyboard } from 'react-native';
 import { Text, View } from '../components/Themed';
 
-import { Calendar, Input, Button, Autocomplete, AutocompleteItem, TextProps } from '@ui-kitten/components';
+import { Calendar, Input, Button, Autocomplete, AutocompleteItem, TextProps, List, Divider, ListItem, Avatar } from '@ui-kitten/components';
 import { gql, useMutation } from '@apollo/client';
 import { Friend } from '../types';
+import { FontAwesome } from '@expo/vector-icons';
 
 const CREATE_PLAN_MUTATION = gql`
 mutation CreatePlan($start: String!, $end: String!, $scheduleId: ID!, $title: String!, $description: String) {
@@ -22,7 +23,8 @@ const filterFriends = (item: Friend, query: string) => item.name.toLowerCase().i
 
 export default function CreatePlanScreen({ route, navigation }: { route: any, navigation: any }) {
   const [value, setValue] = useState('');
-  const [friends, setFriends] = useState(route.params.friends)
+  const [friends, setFriends] = useState(route.params.friends);
+  const [pFriends, setpFriends] = useState<Friend[]>([]);
   const [date, setDate] = useState(new Date());
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -52,7 +54,8 @@ export default function CreatePlanScreen({ route, navigation }: { route: any, na
   const filterDates = (date: Date) => !planDates.includes(date.toISOString())
 
   const onSelect = (index: string | number) => {
-    setValue(route.params.friends[index].name);
+    setpFriends(pFriends => [...pFriends, friends[index]]);
+    Keyboard.dismiss()
   };
 
   const onChangeText = (query: string) => {
@@ -64,20 +67,51 @@ export default function CreatePlanScreen({ route, navigation }: { route: any, na
     <AutocompleteItem
       key={index}
       title={item.name}
+      disabled={pFriends.map(a => a.id).includes(item.id)}
     />
   );
+
+  const renderpFriends = ({ item }: {item: Friend}) => (
+    <ListItem
+      title={item.name}
+      accessoryLeft = {() => (
+        <Avatar source={{uri: "https://isobarscience.com/wp-content/uploads/2020/09/default-profile-picture1.jpg"}}/>
+      )}
+      accessoryRight = {delFriend(item)}
+    />
+  );
+
+  const delFriend = (friend: Friend) => (
+    <Pressable
+      onPress={() => setpFriends(pFriends.filter(item => item.id !== friend.id))}
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.5 : 1,
+      })}>
+      <FontAwesome
+        name="close"
+        size={25}
+      />
+    </Pressable>
+  )
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create a new plan!</Text>
       <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
       <Autocomplete
+        style={{width: '100%'}}
         placeholder='Add a friend!'
         value={value}
         onSelect={onSelect}
         onChangeText={onChangeText}>
         {friends.map(renderOption)}
       </Autocomplete>
+      <List
+        style={{width: '100%'}}
+        data={pFriends}
+        ItemSeparatorComponent={Divider}
+        renderItem={renderpFriends}
+      />
       <Input
           placeholder='Give your plan a name!'
           value={title}

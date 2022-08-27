@@ -9,7 +9,7 @@ import { Plan } from '../types';
 const SCHEDULE = gql `query GetSchedule($getScheduleId: ID!) {
   getSchedule(id: $getScheduleId) {
     title
-    isPrimary
+    isActive
     id
   }
 }`
@@ -25,7 +25,7 @@ const GET_PLANS = gql `query GetPlans($getPlansId: ID!) {
 }`
 
 export default function ScheduleScreen({ route, navigation }: { route: any, navigation: any }) {
-  const [schedule, setSchedule] = useState({title: 'Error', id: 'Error', isPrimary: 'No'});
+  const [schedule, setSchedule] = useState({title: 'Error', id: 'Error', isActive: 0});
   const [plans, setPlans] = useState<Plan[]>([]);
   const [planDates, setplanDates] = useState(['']);
   const [date, setDate] = useState(new Date());
@@ -82,7 +82,7 @@ export default function ScheduleScreen({ route, navigation }: { route: any, navi
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{schedule.title}</Text>
-      <Toggle checked={schedule.isPrimary === "Yes"} onChange={() => {}}>
+      <Toggle checked={schedule.isActive === 1} onChange={() => {}}>
         Active
       </Toggle>
       <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />

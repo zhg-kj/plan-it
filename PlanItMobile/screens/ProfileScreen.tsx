@@ -1,9 +1,9 @@
-import { Alert, FlatList, Pressable, StyleSheet } from 'react-native';
+import { Alert, FlatList, Keyboard, Pressable, StyleSheet } from 'react-native';
 
 import { Text, View } from '../components/Themed';
 import { Key, SetStateAction, useEffect, useState } from 'react';
 import { useQuery, gql, useMutation } from '@apollo/client';
-import { Divider, List, ListItem, Autocomplete, AutocompleteItem } from '@ui-kitten/components';
+import { Divider, List, ListItem, Autocomplete, AutocompleteItem, Toggle } from '@ui-kitten/components';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Friend, Schedule } from '../types';
@@ -22,12 +22,13 @@ const MY_FRIENDS = gql `query MyFriends {
     id
   }
 }`
+//ADD AVATAR
 
 const MY_SCHEDULES = gql `query MySchedules {
   mySchedules {
     id,
     title,
-    isPrimary
+    isActive
   }
 }`
 
@@ -42,6 +43,26 @@ const DELETE_FRIEND_MUTATION = gql `mutation DeleteFriend($friendId: ID!) {
   deleteFriend(friendId: $friendId) {
     id
     name
+  }
+}`
+
+const SET_ACTIVE_MUTATION = gql `mutation SetActive($setActiveId: ID!, $isActive: Int) {
+  setActive(id: $setActiveId, isActive: $isActive) {
+    id
+    userId
+    title
+    isActive
+    lastUpdated
+  }
+}`
+
+const CREATE_SCHEDULE_MUTATION = gql `mutation CreateSchedule($title: String!) {
+  createSchedule(title: $title) {
+    id
+    userId
+    title
+    isActive
+    lastUpdated
   }
 }`
 
@@ -90,11 +111,33 @@ export default function ProfileScreen() {
   if (dfriend.data) {
     console.log(dfriend.data)
   }
+
+  const [setActive, active] = useMutation(SET_ACTIVE_MUTATION)
+
+  if (active.error) {
+    Alert.alert('Error changing active status.', active.error.message);
+  }
+
+  if (active.data) {
+    console.log(active.data)
+  }
+
+  const [setSchedule, schedule] = useMutation(CREATE_SCHEDULE_MUTATION)
+
+  if (schedule.error) {
+    Alert.alert('Error creating schedule.', schedule.error.message);
+  }
+
+  if (schedule.data) {
+    console.log(schedule.data)
+  }
   
+  // Unsuscribe
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       // This check is to prevent error on component mount. The refetch function is defined only after the query is run once
       // It also ensures that refetch runs only when you go back and not on component mount
+      setValue('')
       myUsers.refetch()
       myFriends.refetch()
       mySchedules.refetch()
@@ -103,9 +146,10 @@ export default function ProfileScreen() {
     return unsubscribe;
   }, [navigation]);
 
+  // Users Query
   useEffect(() => {
     if (myUsers.error) {
-      Alert.alert('Error fetching friends.', myUsers.error.message);
+      Alert.alert('Error fetching users.', myUsers.error.message);
     }
   }, [myUsers.error])
 
@@ -115,6 +159,7 @@ export default function ProfileScreen() {
     }
   }, [myUsers.data])
 
+  // Friends Query
   useEffect(() => {
     if (myFriends.error) {
       Alert.alert('Error fetching friends.', myFriends.error.message);
@@ -128,9 +173,10 @@ export default function ProfileScreen() {
     }
   }, [myFriends.data])
 
+  // Schedules Query
   useEffect(() => {
     if (mySchedules.error) {
-      Alert.alert('Error fetching friends.', mySchedules.error.message);
+      Alert.alert('Error fetching schedules.', mySchedules.error.message);
     }
   }, [mySchedules.error])
 
@@ -146,7 +192,9 @@ export default function ProfileScreen() {
   const renderSchedules = ({ item }: {item: Schedule}) => (
     <ListItem
       title={item.title}
-      description={item.isPrimary}
+      accessoryRight={() => (<Toggle checked={item.isActive === 1} onChange={() => setActive({variables: {setActiveId: item.id, isActive: (item.isActive === 1 ? (0) : (1))}})}>
+        Active
+      </Toggle>)}
       onPress={() => navigation.navigate('ScheduleScreen', { schedule: item, friends: friends })}
     />
   );
@@ -174,6 +222,7 @@ export default function ProfileScreen() {
   // Autocomplete
   const onSelect = (index: number) => {
     addFriend({variables: {friendId: users[index].id}});
+    Keyboard.dismiss()
   };
 
   const onChangeText = (query: string) => {
@@ -185,12 +234,15 @@ export default function ProfileScreen() {
     <AutocompleteItem
       key={index}
       title={item.name}
+      disabled={friends.map(a => a.id).includes(item.id)}
+      //style={} GIVE STYLE FOR DISABLED VS ACTIVE
     />
   );
 
   return (
     <View style={styles.container}>
       <Autocomplete
+        style={{width: '100%'}}
         placeholder='Add a friend!'
         value={value}
         onSelect={onSelect}

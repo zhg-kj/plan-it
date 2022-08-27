@@ -30,6 +30,8 @@ const typeDefs = gql`
   type Query {
     myFriends: [User!]!
     mySchedules: [Schedule!]!
+    myActiveSchedules: [Schedule!]!
+    getActiveSchedules(id: ID!): [Schedule!]!
     getSchedule(id: ID!): Schedule
     getPlans(id: ID!): [Plan!]!
     getUsers: [User!]!
@@ -42,10 +44,10 @@ const typeDefs = gql`
     addFriend(friendId: ID!): User!
     deleteFriend(friendId: ID!): User!
 
-    createSchedule(title: String!, primary: String!) : Schedule!
+    createSchedule(title: String!) : Schedule!
     updateSchedule(id: ID!, title: String!) : Schedule
     deleteSchedule(id: ID!): Boolean!
-    setPrimary(id: ID!) : Schedule
+    setActive(id: ID!, isActive: Int) : Schedule
 
     createPlan(start: String!, end: String!, scheduleId: ID!, title: String!, description: String) : Plan!
     updatePlan(id: ID!, start: String!, end: String!) : Plan!
@@ -82,7 +84,7 @@ const typeDefs = gql`
     id: ID!
     userId: String!
     title: String!
-    isPrimary: String!
+    isActive: Int
     lastUpdated: String!
   }
 
@@ -115,6 +117,21 @@ const resolvers = {
       const schedules = await db.collection('Schedules').find({ userId: ObjectId(user._id)}).toArray()
       return schedules
     },
+    myActiveSchedules: async (_, __, { db, user }) => {
+      if (!user) {
+        throw new Error('Invalid Credentials!');
+      }
+
+      const schedules = await db.collection('Schedules').find({ userId: ObjectId(user._id), isActive: 1}).toArray()
+      return schedules
+    },
+    getActiveSchedules: async (_, { id }, { db, user }) => {
+      if (!user) {
+        throw new Error('Invalid Credentials!');
+      }
+      
+      return await db.collection('Schedules').find({ userId: ObjectId(id) });
+    },
     getSchedule: async (_, { id }, { db, user }) => {
       if (!user) {
         throw new Error('Invalid Credentials!');
@@ -135,7 +152,7 @@ const resolvers = {
         throw new Error('Invalid Credentials!');
       }
 
-      const users = await db.collection('Users').find({ userId: { $not: {$eq: ObjectId(user._id)}}}).toArray()
+      const users = await db.collection('Users').find({ _id: {$ne: ObjectId(user._id)}}).toArray()
       return users
     },
   },
@@ -146,6 +163,7 @@ const resolvers = {
       const newUser = {
         ...input, 
         password: hashedPassword,
+        avatar: "https://isobarscience.com/wp-content/uploads/2020/09/default-profile-picture1.jpg",
         friends: []
       }
       
@@ -225,24 +243,20 @@ const resolvers = {
     },
 
     // CRUD Schedule
-    createSchedule: async (_, { title, primary }, { db, user }) => {
+    createSchedule: async (_, { title }, { db, user }) => {
       if (!user) {
         throw new Error('Authentication Error');
       }
 
       const newSchedule = {
         title,
-        isPrimary: primary,
+        isActive: 1,
         lastUpdated: new Date().toISOString(),
         userId: user._id
       }
 
       const result = await db.collection('Schedules').insertOne(newSchedule);
       const schedule = await db.collection('Schedules').findOne({ _id: result.insertedId });
-
-      if (primary) {
-        await db.collection('Schedules').updateOne({ _id: ObjectId(user._id), isPrimary: true }, { $set: { isPrimary: false } });
-      }
 
       return schedule
     },
@@ -251,7 +265,6 @@ const resolvers = {
         throw new Error('Authentication Error');
       }
 
-      //TODO add in changes for lastupdated and option to set primary schedule
       await db.collection('Schedules').updateOne({ _id: ObjectId(id) }, { $set: { title } })
       const updatedSchedule = await db.collection('Schedules').findOne({ _id: ObjectId(id) });
 
@@ -267,18 +280,16 @@ const resolvers = {
 
       return true;
     },
-    setPrimary: async(_, { id }, { db, user }) => {
+    setActive: async(_, { id, isActive }, { db, user }) => {
       if (!user) {
         throw new Error('Authentication Error');
       }
 
-      await db.collection('Schedules').updateOne({ _id: ObjectId(id) }, { $set: { isPrimary: true } })
-      await db.collection('Schedules').updateOne({ _id: ObjectId(user._id), isPrimary: true }, { $set: { isPrimary: false } });
+      await db.collection('Schedules').updateOne({ _id: ObjectId(id) }, { $set: { isActive: isActive } })
       const updatedSchedule = await db.collection('Schedules').findOne({ _id: ObjectId(id) });
 
       return updatedSchedule
     },
-
 
     // CRUD Plan
     createPlan: async (_, { start, end, scheduleId, title, description }, { db, user }) => {
