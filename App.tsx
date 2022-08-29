@@ -7,6 +7,7 @@ import Navigation from './navigation';
 
 import { ApplicationProvider } from '@ui-kitten/components';
 import * as eva from '@eva-design/eva';
+import { default as theme } from './constants/theme.json';
 
 import { client } from './apollo';
 import { ApolloProvider } from '@apollo/client';
@@ -19,7 +20,7 @@ export default function App() {
     return null;
   } else {
     return (
-      <ApplicationProvider {...eva} theme={eva.light}>
+      <ApplicationProvider {...eva} theme={{ ...eva.light, ...theme }} >
         <SafeAreaProvider>
           <ApolloProvider client={client}>
             <Navigation colorScheme={colorScheme} />

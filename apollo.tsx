@@ -3,7 +3,7 @@ import { setContext } from '@apollo/client/link/context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-const URI = 'http://192.168.2.13:4000/';
+const URI = 'https://planitapi.herokuapp.com/';
 
 const httpLink = createHttpLink({
   uri: URI,

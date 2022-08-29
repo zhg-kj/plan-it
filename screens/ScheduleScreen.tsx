@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Alert, Platform, StyleSheet } from 'react-native';
-import { Text, View } from '../components/Themed';
 
-import { Button, Calendar, Toggle } from '@ui-kitten/components';
+import { Button, Calendar, Toggle, Layout, Text } from '@ui-kitten/components';
 import { useQuery, gql } from '@apollo/client';
 import { Plan } from '../types';
 
@@ -80,12 +79,11 @@ export default function ScheduleScreen({ route, navigation }: { route: any, navi
   }
 
   return (
-    <View style={styles.container}>
+    <Layout style={styles.container}>
       <Text style={styles.title}>{schedule.title}</Text>
       <Toggle checked={schedule.isActive === 1} onChange={() => {}}>
         Active
       </Toggle>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
       <Calendar
         date={date}
         onSelect={(nextDate) => {
@@ -102,15 +100,15 @@ export default function ScheduleScreen({ route, navigation }: { route: any, navi
       <Button onPress={() => {navigation.navigate("CreatePlan", { schedule: schedule, planDates: planDates, friends: route.params.friends })}}>
         Add a Plan!
       </Button>
-      <View style={styles.container}>
+      <Layout style={styles.container}>
         <Text style={styles.title}>
           {selectedPlan.title}
         </Text>
         <Text style={styles.title}>
           {selectedPlan.description}
         </Text>
-      </View>
-    </View>
+      </Layout>
+    </Layout>
   );
 }
 

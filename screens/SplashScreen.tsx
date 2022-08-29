@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
-import { View } from 'react-native'
-import { Spinner } from '@ui-kitten/components'
+import { Spinner, Layout } from '@ui-kitten/components'
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -25,9 +24,9 @@ const SplashScreen = () => {
   }
 
   return (
-    <View style={{flex: 1, justifyContent: 'center'}}>
+    <Layout style={{flex: 1, justifyContent: 'center'}}>
       <Spinner size='giant'/>
-    </View>
+    </Layout>
   )
 }
 

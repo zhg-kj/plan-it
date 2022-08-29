@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Alert, Platform, Pressable, StyleSheet, Keyboard } from 'react-native';
-import { Text, View } from '../components/Themed';
 
-import { Calendar, Input, Button, Autocomplete, AutocompleteItem, TextProps, List, Divider, ListItem, Avatar } from '@ui-kitten/components';
+import { Calendar, Input, Button, Autocomplete, AutocompleteItem, List, Divider, ListItem, Avatar, Layout, Text } from '@ui-kitten/components';
 import { gql, useMutation } from '@apollo/client';
 import { Friend } from '../types';
 import { FontAwesome } from '@expo/vector-icons';
@@ -95,9 +94,8 @@ export default function CreatePlanScreen({ route, navigation }: { route: any, na
   )
 
   return (
-    <View style={styles.container}>
+    <Layout style={styles.container}>
       <Text style={styles.title}>Create a new plan!</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
       <Autocomplete
         style={{width: '100%'}}
         placeholder='Add a friend!'
@@ -132,7 +130,7 @@ export default function CreatePlanScreen({ route, navigation }: { route: any, na
       <Button onPress={() => {createPlan({variables: { start: date, end: date, scheduleId: route.params.schedule.id, title: title, description: description }})}}>
         Create Plan
       </Button>
-    </View>
+    </Layout>
   );
 }
 

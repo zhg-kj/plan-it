@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { View } from 'react-native'
-import { Text, Input, Button } from '@ui-kitten/components'
+import { Text, Input, Button, Layout } from '@ui-kitten/components'
 import { useNavigation } from '@react-navigation/native'
 import { gql, useMutation } from '@apollo/client'
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -43,7 +43,7 @@ const SignUpScreen = () => {
   }
 
   return (
-    <View style={{flex: 1, justifyContent: 'center'}}>
+    <Layout style={{flex: 1, justifyContent: 'center'}}>
       <Input
           placeholder='Name'
           value={name}
@@ -66,7 +66,7 @@ const SignUpScreen = () => {
       <Button onPress={() => navigation.navigate('SignInScreen')} appearance='ghost'>
         Existing User? Sign In!
       </Button>
-    </View>
+    </Layout>
   )
 }
 

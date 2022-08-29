@@ -1,9 +1,8 @@
 import { Alert, FlatList, Keyboard, Pressable, StyleSheet } from 'react-native';
 
-import { Text, View } from '../components/Themed';
 import { Key, SetStateAction, useEffect, useState } from 'react';
 import { useQuery, gql, useMutation } from '@apollo/client';
-import { Divider, List, ListItem, Autocomplete, AutocompleteItem, Toggle } from '@ui-kitten/components';
+import { Divider, List, ListItem, Autocomplete, AutocompleteItem, Toggle, Avatar, Layout } from '@ui-kitten/components';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Friend, Schedule } from '../types';
@@ -240,7 +239,8 @@ export default function ProfileScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <Layout style={styles.container}>
+      <Avatar size='giant' source={{uri: "https://isobarscience.com/wp-content/uploads/2020/09/default-profile-picture1.jpg"}}/>
       <Autocomplete
         style={{width: '100%'}}
         placeholder='Add a friend!'
@@ -261,8 +261,7 @@ export default function ProfileScreen() {
         ItemSeparatorComponent={Divider}
         renderItem={renderSchedules}
       />
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-    </View>
+    </Layout>
   );
 }
 
