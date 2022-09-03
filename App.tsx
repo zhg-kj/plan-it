@@ -5,7 +5,8 @@ import useCachedResources from './hooks/useCachedResources';
 import useColorScheme from './hooks/useColorScheme';
 import Navigation from './navigation';
 
-import { ApplicationProvider } from '@ui-kitten/components';
+import { ApplicationProvider, IconRegistry } from '@ui-kitten/components';
+import { EvaIconsPack } from '@ui-kitten/eva-icons';
 import * as eva from '@eva-design/eva';
 import { default as theme } from './constants/theme.json';
 
@@ -20,14 +21,17 @@ export default function App() {
     return null;
   } else {
     return (
-      <ApplicationProvider {...eva} theme={{ ...eva.light, ...theme }} >
-        <SafeAreaProvider>
-          <ApolloProvider client={client}>
-            <Navigation colorScheme={colorScheme} />
-            <StatusBar />
-          </ApolloProvider>
-        </SafeAreaProvider>
-      </ApplicationProvider>
+      <>
+        <IconRegistry icons={EvaIconsPack} />
+        <ApplicationProvider {...eva} theme={{ ...eva.light, ...theme }} >
+          <SafeAreaProvider>
+            <ApolloProvider client={client}>
+              <Navigation colorScheme={colorScheme} />
+              <StatusBar backgroundColor={'white'}/>
+            </ApolloProvider>
+          </SafeAreaProvider>
+        </ApplicationProvider>
+      </>
     );
   }
 }

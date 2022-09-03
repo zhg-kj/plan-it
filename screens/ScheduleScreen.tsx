@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { Alert, Platform, StyleSheet } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 
-import { Button, Calendar, Toggle, Layout, Text } from '@ui-kitten/components';
-import { useQuery, gql } from '@apollo/client';
+import { Button, Calendar, Toggle, Layout, Text, Icon } from '@ui-kitten/components';
+import { useQuery, gql, useMutation } from '@apollo/client';
 import { Plan } from '../types';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+/***QUERIES***/
 const SCHEDULE = gql `query GetSchedule($getScheduleId: ID!) {
   getSchedule(id: $getScheduleId) {
     title
@@ -23,27 +25,27 @@ const GET_PLANS = gql `query GetPlans($getPlansId: ID!) {
   }
 }`
 
+/***MUTATIONS***/
+const SET_ACTIVE = gql `mutation SetActive($setActiveId: ID!, $isActive: Int) {
+  setActive(id: $setActiveId, isActive: $isActive) {
+    id
+    userId
+    title
+    isActive
+    lastUpdated
+  }
+}`
+
 export default function ScheduleScreen({ route, navigation }: { route: any, navigation: any }) {
   const [schedule, setSchedule] = useState({title: 'Error', id: 'Error', isActive: 0});
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [planDates, setplanDates] = useState(['']);
+  const [busyDates, setBusyDates] = useState(['']);
   const [date, setDate] = useState(new Date());
-  const [selectedPlan, setselectedPlan] = useState({title: 'No plans today!', id: 'Error', description: 'Nothing!'})
+  const [selectedPlan, setselectedPlan] = useState({title: 'No plans today!', id: 'Error', description: ''})
 
+  /***QUERIES***/
+  // Schedule Query
   const scheduleQuery = useQuery(SCHEDULE, { variables: { getScheduleId: route.params.schedule.id }})
-
-  const filter = (date: Date) => planDates.includes(date.toISOString())
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      // This check is to prevent error on component mount. The refetch function is defined only after the query is run once
-      // It also ensures that refetch runs only when you go back and not on component mount
-      plansQuery.refetch()
-      scheduleQuery.refetch()
-    });
-    
-    return unsubscribe;
-  }, [navigation]);
 
   useEffect(() => {
     if (scheduleQuery.error) {
@@ -57,6 +59,7 @@ export default function ScheduleScreen({ route, navigation }: { route: any, navi
     }
   }, [scheduleQuery.data])
 
+  // Plans Query
   const plansQuery = useQuery(GET_PLANS, { variables: { getPlansId: route.params.schedule.id }})
 
   useEffect(() => {
@@ -70,68 +73,138 @@ export default function ScheduleScreen({ route, navigation }: { route: any, navi
       setPlans(plansQuery.data.getPlans);
       //make it so if the initial day has a plan it shows the plan instead of the default no plans today message.
       const days = plansQuery.data.getPlans.map(setPlansHelper)
-      setplanDates(days)
+      setBusyDates(days)
     }
   }, [plansQuery.data])
+
+  // Refetch Queries
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      // This check is to prevent error on component mount. The refetch function is defined only after the query is run once
+      // It also ensures that refetch runs only when you go back and not on component mount
+      plansQuery.refetch()
+      scheduleQuery.refetch()
+    });
+    
+    return unsubscribe;
+  }, [navigation]);
+
+  /***MUTATIONS***/
+  // Set Active Mutations
+  const [setActive, active] = useMutation(SET_ACTIVE)
+
+  if (active.error) {
+    Alert.alert('Error changing active status.', active.error.message);
+  }
+
+  if (active.data) {
+    console.log(active.data)
+  }
+
+  // Calendar Helpers
+  const filter = (date: Date) => busyDates.includes(date.toISOString())
 
   const setPlansHelper = (plan: { start: string | number | Date; }) => { 
     return plan.start
   }
 
-  return (
-    <Layout style={styles.container}>
-      <Text style={styles.title}>{schedule.title}</Text>
-      <Toggle checked={schedule.isActive === 1} onChange={() => {}}>
-        Active
-      </Toggle>
-      <Calendar
-        date={date}
-        onSelect={(nextDate) => {
-          for (let i = 0; i < plans.length; i++) {
-            if (nextDate.toISOString() == plans[i].start) {
-              setselectedPlan(plans[i])
-            }
-          }
+  /***ICONS***/
+  const BackIcon = (props: any) => (
+    <Icon {...props} name='arrow-ios-back-outline' onPress={() => navigation.navigate('Home')} />
+  );
 
-          setDate(nextDate)
-        }}
-        filter={filter}
-      />
-      <Button onPress={() => {navigation.navigate("CreatePlan", { schedule: schedule, planDates: planDates, friends: route.params.friends })}}>
-        Add a Plan!
-      </Button>
-      <Layout style={styles.container}>
-        <Text style={styles.title}>
+  const PlusIcon = (props: any) => (
+    <Icon {...props} name='plus-circle-outline' />
+  );
+
+  return (
+    <SafeAreaView style={styles.rootContainer}>
+      <Layout style={styles.titleContainer}>
+        <Button 
+          style={styles.button} 
+          size='giant'
+          appearance='ghost' 
+          status='danger' 
+          accessoryLeft={BackIcon} 
+          onPress={() => navigation.goBack()}/>
+        <Text category='h1' status='primary'>{schedule.title}</Text>
+      </Layout>
+      <Layout style={styles.actionsContainer}>
+        <Button 
+          style={{padding: 0}}
+          accessoryLeft={PlusIcon} 
+          appearance='ghost'  
+          onPress={() => {navigation.navigate("CreatePlan", { schedule: schedule, busyDates: busyDates })}}>
+          Add a Plan!
+        </Button>
+        <Toggle checked={schedule.isActive === 1} onChange={() => setActive({variables: {setActiveId: schedule.id, isActive: (schedule.isActive === 1 ? (0) : (1))}})} />
+      </Layout>
+      <Layout style={styles.calendarContainer}>
+        <Calendar
+          date={date}
+          onSelect={(nextDate) => {
+            for (let i = 0; i < plans.length; i++) {
+              if (nextDate.toISOString() == plans[i].start) {
+                setselectedPlan(plans[i])
+              }
+            }
+
+            setDate(nextDate)
+          }}
+          filter={filter}
+          style={{flex: 1, width: '100%', borderRadius: 20}}
+        />
+      </Layout>
+      <Layout style={styles.planContainer}>
+        <Text category='s1' status='basic'>
           {selectedPlan.title}
         </Text>
-        <Text style={styles.title}>
+        <Text category='p1' status='basic'>
           {selectedPlan.description}
         </Text>
       </Layout>
-    </Layout>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  rootContainer: {
     flex: 1,
+    backgroundColor: 'white'
+  },
+  titleContainer: {
+    padding: 20,
+    paddingTop: 40,
+    flexDirection: 'row'
+  },
+  actionsContainer: {
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+  },
+  calendarContainer: {
+    paddingHorizontal: 20,
+    minHeight: 390,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  planContainer: {
+    margin: 20,
+    padding: 20,
+    borderRadius: 20,
+    borderColor: 'rgb(228, 233, 242)',
+    borderWidth: 1,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
   },
+  button: {
+    height: 50,
+  },
   separator: {
     marginVertical: 30,
     height: 1,
     width: '80%',
-  },
-  dayContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    aspectRatio: 1,
   },
   value: {
     fontSize: 10,

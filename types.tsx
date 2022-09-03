@@ -1,10 +1,3 @@
-/**
- * Learn more about using TypeScript with React Navigation:
- * https://reactnavigation.org/docs/typescript/
- */
-
-import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 declare global {
@@ -14,7 +7,7 @@ declare global {
 }
 
 export type RootStackParamList = {
-  Root: NavigatorScreenParams<RootTabParamList> | undefined;
+  Root: undefined;
   Home: undefined;
   CreatePlan: undefined;
   NotFound: undefined;
@@ -22,6 +15,7 @@ export type RootStackParamList = {
   SignUpScreen: undefined;
   SplashScreen: undefined;
   ScheduleScreen: { schedule: Schedule, friends: Friend[] };
+  AddFriendsScreen: undefined;
 };
 
 export type RootStackScreenProps<Screen extends keyof RootStackParamList> = NativeStackScreenProps<
@@ -29,19 +23,11 @@ export type RootStackScreenProps<Screen extends keyof RootStackParamList> = Nati
   Screen
 >;
 
-export type RootTabParamList = {
-  Home: undefined;
-};
-
-export type RootTabScreenProps<Screen extends keyof RootTabParamList> = CompositeScreenProps<
-  BottomTabScreenProps<RootTabParamList, Screen>,
-  NativeStackScreenProps<RootStackParamList>
->;
-
 export type Schedule = {
   title: string,
   isActive: number,
-  id: string
+  id: string,
+  color: string
 }
 
 export type Plan = {
@@ -49,10 +35,12 @@ export type Plan = {
   id: string,
   start: string,
   end: string,
-  description: string
+  description: string,
+  schedule: { title: string }
 }
 
 export type Friend = {
   name: string
   id: string
+  avatar: string
 }
